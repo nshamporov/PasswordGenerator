@@ -2,7 +2,7 @@ import tkinter as tk
 
 # creating tk window
 window = tk.Tk()
-window.title("Test2 window")
+window.title("Pack Placement")
 
 # first create a division with the help of Frame class and align them on TOP and BOTTOM with pack() method
 top_Frame = tk.Frame(window).pack()

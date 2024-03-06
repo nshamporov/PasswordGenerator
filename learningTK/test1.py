@@ -3,7 +3,7 @@ import tkinter as tk
 window = tk.Tk()
 
 # to rename the title of the window
-window.title("Test1 window")
+window.title("Creating Button")
 
 # pack is used to show the object in the window
 # This is a label widget which is used to display text
