@@ -1,7 +1,10 @@
 import string
 import secrets
 import importlib
+import tkinter as tk
 
+
+# function that generates a password
 def generate_password(length=12, uppercase=True, digits=True, special_chars=True):
     characters = string.ascii_lowercase
 
@@ -14,6 +17,22 @@ def generate_password(length=12, uppercase=True, digits=True, special_chars=True
 
     password = ''.join(secrets.choice(characters) for _ in range(length))
     return password
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
