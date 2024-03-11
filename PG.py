@@ -14,6 +14,19 @@ def database_config(username, password):
 
     cursor = connection.cursor()
 
+    # creating database with table 
+    cursor.execute("create database if not exists Passwords")
+    cursor.execute("use Passwords")
+    cursor.execute("create table if not exists GeneratedPasswords(id int auto_increment primary key, acc_name varchar(255), password varchar(255))")
+
+    cursor.execute("show databases like 'Passwords'")
+    database_status = cursor.fetchone()
+
+    if database_status:
+        print("Database exists")
+    else:
+        print("Database was created")
+
     # create an alert message with logs if table and database exist or not and that user logged in successfuly
 
 
@@ -76,6 +89,7 @@ class login(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
+    # function that sends username and password to database_config()
     def send_username_password(self):
         username = self.username_field.get()
         password = self.password_field.get()
@@ -96,8 +110,6 @@ class Main(tk.Frame):
     
         PGbutton = tk.Button(self, text="Generate Password", command=lambda: controller.show_frame(PGpage))
         PGbutton.pack()
-
-
 
 
 # class for password generating and adding account name (and sending to database)
