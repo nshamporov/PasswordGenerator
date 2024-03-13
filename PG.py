@@ -4,6 +4,14 @@ import string
 import mysql.connector
 import tkinter.messagebox
 
+# TODO: fix error with multiplying password list in ViewP
+# TODO: organise the password list in ViewP
+# TODO: create EditP page
+# TODO: create DeleteP page
+
+# TODO (Optional): create page where users can create their own database
+# TODO (Optional): think of how can create sign up page
+
 
 # database connection
 def database_config(username, password):
@@ -55,16 +63,27 @@ def database_config(username, password):
             connection.close()
 
 
+# function to create a cursor for mysql queries
+def get_cursor():
+    if 'connection' in globals() and 'cursor' in globals():
+        return cursor
+    else:
+        return None
+
+
 # saving passwords to the database
 def inserting_password(account_name, generated_password):
     try:
+        # query to insert data to the database
         cursor.execute("insert into GeneratedPasswords (acc_name, password) values (%s, %s)", (account_name, generated_password))
         connection.commit()
 
+        # status message box
         tk.messagebox.showinfo("Password Saved Status", "Congradulations, Your password has been saved successfully!")
         return True
     
     except mysql.connector.Error as err:
+        # error alert box
         tk.messagebox.showerror("Error", f"Error: {err}")
         return False
     
@@ -83,6 +102,9 @@ class PasswordGenerator(tk.Tk):
         self.title("Password Generator")
         self.geometry("400x100")
 
+        self.username = None
+        self.password = None
+
         window = tk.Frame(self)
         window.pack(side = "top", fill="both", expand=True)
         window.grid_rowconfigure(0, weight=1)
@@ -100,8 +122,14 @@ class PasswordGenerator(tk.Tk):
 
     # function to display frames
     def show_frame(self, cont):
-        frame = self.frames[cont]
-        frame.tkraise()
+        if cont == ViewP:
+            if self.username and self.password:
+                frame = self.frames[cont]
+                frame.getting_passwords()
+                frame.tkraise()
+        else:
+            frame = self.frames[cont]
+            frame.tkraise()
 
 
 # class for login page
@@ -138,10 +166,17 @@ class login(tk.Frame):
 
     # function that sends username and password to database_config()
     def send_username_password(self):
+        # getting data from fields
         username = self.username_field.get()
         password = self.password_field.get()
+
+        # sending data to database_config()
         success = database_config(username, password)
+        
+        # if sent then we define those variables and return to main page
         if success:
+            self.controller.username = username
+            self.controller.password = password
             self.controller.show_frame(Main)
         
 
@@ -155,6 +190,9 @@ class Main(tk.Frame):
     
         PasswordGeneratorPage = tk.Button(self, text="Generate Password", command=lambda: controller.show_frame(PGpage))
         PasswordGeneratorPage.pack()
+
+        PasswordViewPage = tk.Button(self, text = "View Passwords", command=lambda: controller.show_frame(ViewP))
+        PasswordViewPage.pack()
 
 
 # class for password generating and adding account name (and sending to database)
@@ -235,6 +273,54 @@ class PGpage(tk.Frame):
 class ViewP(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.controller = controller
+        self.password_labels = []
+        
+        # head title of the page
+        title_label = tk.Label(self, text = "Passwords from the database: ")
+        title_label.pack()
+
+        # frame to display passwords
+        self.passwords_frame = tk.Frame(self)
+        self.passwords_frame.pack()
+
+        # button to go back to the Main page
+        back_button = tk.Button(self, text = "Back", command = lambda:controller.show_frame(Main))
+        back_button.pack()
+
+    # function to get passwords from the database
+    def getting_passwords(self):
+
+        # getting cursor for mysql queries 
+        cursor = get_cursor()
+
+        # if statement to check if cursor is connected (if not that means the user didn't log in)
+        if cursor:
+            try:
+                # mysql query to select all passwords from database
+                cursor.execute("select * from GeneratedPasswords")
+                passwords_list = cursor.fetchall()
+
+                # if statement to check if there are any passwords in the database
+                if passwords_list:
+
+                    # loop to show passwords if there are any
+                    for password in passwords_list:
+                        password_label = tk.Label(self.passwords_frame, text = password)
+                        password_label.pack()
+                        self.password_labels.append(password_label)
+                else:
+                    # label to show that the are no passwords in the database
+                    no_passwords_label = tk.Label(self.passwords_frame, text = "No passwords were saved in the database.")
+                    no_passwords_label.pack()
+                    self.password_labels.append(no_passwords_label)
+
+            except mysql.connector.Error as err:
+                # error alert box
+                tk.messagebox.showerror("Error", f"Error: {err}")   
+        else:
+            # warning box to tell user to log in
+            tk.messagebox.showwarning("Warning!", "Please log in first.")
 
 
 
@@ -260,4 +346,3 @@ class DeleteP(tk.Frame):
 if __name__ == "__main__":
     app = PasswordGenerator()
     app.mainloop()
-
