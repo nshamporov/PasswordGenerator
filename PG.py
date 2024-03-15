@@ -4,7 +4,7 @@ import string
 import mysql.connector
 import tkinter.messagebox
 
-# TODO: make it that when you leave PGPage and come back the acc_name field is empty 
+# TODO: make it that when you leave PGPage and come back the acc_name field is empty    <-DONE->
 # TODO: fix error with multiplying password list in ViewP   <-DONE->
 # TODO: organise the password list in ViewP     <-DONE->
 # TODO: create EditP page
@@ -249,7 +249,7 @@ class PGpage(tk.Frame):
         save_button = tk.Button(self, text = "Save", command = self.send_accName_GenPassword)
         save_button.grid(row = 3, column = 1, sticky = 'ws')
 
-        back_button = tk.Button(self, text = "Back", command = lambda:controller.show_frame(Main))
+        back_button = tk.Button(self, text = "Back", command = self.backToMain)
         back_button.grid(row = 3, column = 1, sticky = 'es')
 
 
@@ -268,7 +268,12 @@ class PGpage(tk.Frame):
         
         sent = inserting_password(account_name, generated_password)
         if sent:
+            self.account_field.delete(0, tk.END)
             self.controller.show_frame(Main)
+    
+    def backToMain(self):
+        self.account_field.delete(0, tk.END)
+        self.controller.show_frame(Main)
 
 
 # class that shows the passwords in the database
