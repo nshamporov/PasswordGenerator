@@ -4,10 +4,12 @@ import string
 import mysql.connector
 import tkinter.messagebox
 
-# TODO: fix error with multiplying password list in ViewP
-# TODO: organise the password list in ViewP
+# TODO: make it that when you leave PGPage and come back the acc_name field is empty 
+# TODO: fix error with multiplying password list in ViewP   <-DONE->
+# TODO: organise the password list in ViewP     <-DONE->
 # TODO: create EditP page
 # TODO: create DeleteP page
+# TODO: create a scroll bar
 
 # TODO (Optional): create page where users can create their own database
 # TODO (Optional): think of how can create sign up page
@@ -301,14 +303,26 @@ class ViewP(tk.Frame):
                 cursor.execute("select * from GeneratedPasswords")
                 passwords_list = cursor.fetchall()
 
+                for label in self.password_labels:
+                    label.destroy()
+                self.password_labels.clear()
+
                 # if statement to check if there are any passwords in the database
                 if passwords_list:
 
                     # loop to show passwords if there are any
-                    for password in passwords_list:
-                        password_label = tk.Label(self.passwords_frame, text = password)
-                        password_label.pack()
-                        self.password_labels.append(password_label)
+                    for idx, password in enumerate(passwords_list):
+                        id_label = tk.Label(self.passwords_frame, text = password[0])
+                        id_label.grid(row = idx, column =0, padx = 5, pady = 5)
+                        self.password_labels.append(id_label)
+
+                        acc_name_label = tk.Label(self.passwords_frame, text = password[1])
+                        acc_name_label.grid(row = idx, column = 1, padx = 5, pady = 5)  # Add padding between columns
+                        self.password_labels.append(acc_name_label)  # Store account name label
+
+                        password_label = tk.Label(self.passwords_frame, text = password[2])
+                        password_label.grid(row = idx, column = 2, padx = 5, pady = 5)  # Add padding between columns
+                        self.password_labels.append(password_label)  # Store password label
                 else:
                     # label to show that the are no passwords in the database
                     no_passwords_label = tk.Label(self.passwords_frame, text = "No passwords were saved in the database.")
