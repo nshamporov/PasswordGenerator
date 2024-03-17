@@ -7,9 +7,9 @@ import tkinter.messagebox
 # TODO: make it that when you leave PGPage and come back the acc_name field is empty    <-DONE->
 # TODO: fix error with multiplying password list in ViewP   <-DONE->
 # TODO: organise the password list in ViewP     <-DONE->
+# TODO: create scrolling list   <-(needs some tweaking)->
 # TODO: create EditP page
 # TODO: create DeleteP page
-# TODO: create a scroll bar
 
 # TODO (Optional): create page where users can create their own database
 # TODO (Optional): think of how can create sign up page
@@ -285,15 +285,38 @@ class ViewP(tk.Frame):
         
         # head title of the page
         title_label = tk.Label(self, text = "Passwords from the database: ")
-        title_label.pack()
+        title_label.grid(row=0, columnspan=2)
 
-        # frame to display passwords
-        self.passwords_frame = tk.Frame(self)
-        self.passwords_frame.pack()
+        self.canvas = tk.Canvas(self)
+        self.canvas.grid(row=1, columnspan=2)
+
+        # Frame to display passwords
+        self.passwords_frame = tk.Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.passwords_frame, anchor="nw")
+
+        # Bind mouse wheel events to scroll the canvas
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         # button to go back to the Main page
         back_button = tk.Button(self, text = "Back", command = lambda:controller.show_frame(Main))
-        back_button.pack()
+        back_button.grid(row=1, column=3, sticky="ns")
+
+        self.scroll_pos = 0
+
+    def _on_mousewheel(self, event):
+    # Get the direction of the mouse wheel movement (positive or negative)
+        delta = event.delta
+
+        # Check if the canvas is scrollable in the current direction
+        if delta < 0:
+            # Scroll down if possible
+            self.canvas.yview_scroll(1, "units")
+        elif delta > 0:
+            # Scroll up if possible
+            self.canvas.yview_scroll(-1, "units")
+
+
+
 
     # function to get passwords from the database
     def getting_passwords(self):
