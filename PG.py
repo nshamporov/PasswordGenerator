@@ -14,6 +14,20 @@ import tkinter.messagebox
 # TODO (Optional): create page where users can create their own database
 # TODO (Optional): think of how can create sign up page
 
+# function that generates a password and gets account name 
+def generate_password(length=12, uppercase=True, digits=True, special_chars=True):  
+    # generating a password
+    characters = string.ascii_lowercase
+
+    if uppercase:
+        characters += string.ascii_uppercase
+    if digits:
+        characters += string.digits
+    if special_chars:
+        characters += string.punctuation
+    
+    password = ''.join(secrets.choice(characters) for _ in range(length))
+    return password
 
 # database connection
 def database_config(username, password):
@@ -102,7 +116,7 @@ class PasswordGenerator(tk.Tk):
 
         # creating main window
         self.title("Password Generator")
-        self.geometry("400x100")
+        self.geometry("600x400")
 
         self.username = None
         self.password = None
@@ -162,7 +176,7 @@ class login(tk.Frame):
         # submit button (to check if the information is right)
         submit_button = tk.Button(self, text = "Submit", command = self.send_username_password)  # change after database is done
         submit_button.grid(columnspan = 2)
-
+    
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
@@ -188,13 +202,18 @@ class Main(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         title = tk.Label(self, text="Welcome to the Password Generator.")
-        title.pack()
+        title.grid(row = 0)
     
         PasswordGeneratorPage = tk.Button(self, text="Generate Password", command=lambda: controller.show_frame(PGpage))
-        PasswordGeneratorPage.pack()
+        PasswordGeneratorPage.grid(row = 1, padx = 5, pady = 5)
 
         PasswordViewPage = tk.Button(self, text = "View Passwords", command=lambda: controller.show_frame(ViewP))
-        PasswordViewPage.pack()
+        PasswordViewPage.grid(row = 2, padx = 5, pady = 5)
+
+        PasswordEditPage = tk.Button(self, text = "Edit Passwords", command = lambda:controller.show_frame(EditP))
+        PasswordEditPage.grid(row = 3, padx = 5, pady = 5)
+
+        self.grid_columnconfigure(0, weight=1)
 
 
 # class for password generating and adding account name (and sending to database)
@@ -202,23 +221,6 @@ class PGpage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-
-        # function that generates a password and gets account name 
-        def generate_password(length=12, uppercase=True, digits=True, special_chars=True):
-            
-            # generating a password
-            characters = string.ascii_lowercase
-
-            if uppercase:
-                characters += string.ascii_uppercase
-            if digits:
-                characters += string.digits
-            if special_chars:
-                characters += string.punctuation
-            
-            password = ''.join(secrets.choice(characters) for _ in range(length))
-            return password
-        
         self.password = generate_password()
 
         # function to re generate password
@@ -299,24 +301,24 @@ class ViewP(tk.Frame):
 
         # button to go back to the Main page
         back_button = tk.Button(self, text = "Back", command = lambda:controller.show_frame(Main))
-        back_button.grid(row=1, column=3, sticky="ns")
+        back_button.grid(row=2, columnspan=2)
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
 
         self.scroll_pos = 0
 
+    # enable scrolling
     def _on_mousewheel(self, event):
-    # Get the direction of the mouse wheel movement (positive or negative)
         delta = event.delta
 
-        # Check if the canvas is scrollable in the current direction
+        # check if the canvas is scrollable in the current direction
         if delta < 0:
             # Scroll down if possible
             self.canvas.yview_scroll(1, "units")
         elif delta > 0:
             # Scroll up if possible
             self.canvas.yview_scroll(-1, "units")
-
-
-
 
     # function to get passwords from the database
     def getting_passwords(self):
@@ -331,6 +333,7 @@ class ViewP(tk.Frame):
                 cursor.execute("select * from GeneratedPasswords")
                 passwords_list = cursor.fetchall()
 
+                # for loop to clear the list after left the page
                 for label in self.password_labels:
                     label.destroy()
                 self.password_labels.clear()
@@ -340,17 +343,20 @@ class ViewP(tk.Frame):
 
                     # loop to show passwords if there are any
                     for idx, password in enumerate(passwords_list):
+                        # displaying id
                         id_label = tk.Label(self.passwords_frame, text = password[0])
                         id_label.grid(row = idx, column =0, padx = 5, pady = 5)
                         self.password_labels.append(id_label)
 
+                        # displaying acc name
                         acc_name_label = tk.Label(self.passwords_frame, text = password[1])
-                        acc_name_label.grid(row = idx, column = 1, padx = 5, pady = 5)  # Add padding between columns
-                        self.password_labels.append(acc_name_label)  # Store account name label
+                        acc_name_label.grid(row = idx, column = 1, padx = 5, pady = 5)
+                        self.password_labels.append(acc_name_label)
 
+                        # displaying password
                         password_label = tk.Label(self.passwords_frame, text = password[2])
-                        password_label.grid(row = idx, column = 2, padx = 5, pady = 5)  # Add padding between columns
-                        self.password_labels.append(password_label)  # Store password label
+                        password_label.grid(row = idx, column = 2, padx = 5, pady = 5)
+                        self.password_labels.append(password_label)
                 else:
                     # label to show that the are no passwords in the database
                     no_passwords_label = tk.Label(self.passwords_frame, text = "No passwords were saved in the database.")
@@ -365,22 +371,58 @@ class ViewP(tk.Frame):
             tk.messagebox.showwarning("Warning!", "Please log in first.")
 
 
-
-
-
-
-
-
-
-
 class EditP(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.controller = controller
+        self.password = generate_password()
+
+        # function to re generate password
+        def regenarate_password():
+            self.password = generate_password()
+            displaying_password.config(text = self.password)
+        
+        # Labels and entry fields for password details
+        tk.Label(self, text="Account Name:").grid(row=0, column=1, padx = 1, pady = 3)
+        self.account_name_entry = tk.Entry(self)
+        self.account_name_entry.grid(row=0, column=2, padx = 1, pady = 3)
+
+        tk.Label(self, text="Password:").grid(row=1, column=0, padx = 1, pady = 3)
+        self.password_entry = tk.Entry(self, show="*")
+        self.password_entry.grid(row=1, column=1, padx = 1, pady = 3)
+
+        regenarate_button = tk.Button(self, text = "Re-Generate", command = regenarate_password)
+        regenarate_button.grid(row = 1, column = 2, padx = 1, pady = 3)
+
+        displaying_password = tk.Label(self,  text = self.password)
+        displaying_password.grid(row = 1, column = 3, padx = 1, pady = 3)
+
+        
+
+        # Button to update password
+        update_button = tk.Button(self, text="Update Password")     # updating command
+        update_button.grid(row=2, column=1, padx = 1, pady = 3)
+
+        # Button to go back to the main page
+        back_button = tk.Button(self, text="Back", command=lambda: controller.show_frame(Main))
+        back_button.grid(row=2, column=2, padx = 1, pady = 3)
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(2, weight=1)
+        self.grid_columnconfigure(3, weight=1)
+
+
+
+
+
+
 
 
 class DeleteP(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.controller = controller
 
 
 
