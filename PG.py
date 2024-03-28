@@ -3,8 +3,7 @@ import secrets
 import string
 import mysql.connector
 import tkinter.messagebox
-
-# TODO: create copy button for ViewP and EditP
+import pyperclip
 
 
 # class that creates the base of the app
@@ -86,6 +85,14 @@ class login(tk.Frame):
         username = self.username_field.get()
         password = self.password_field.get()
 
+        if not username.strip():
+            tk.messagebox.showwarning("Warning!", "Please enter username.")
+            return
+        
+        if not password.strip():
+            tk.messagebox.showwarning("Warning!", "Please enter password.")
+            return
+
         # sending data to database_config()
         success = database_config(username, password)
         
@@ -130,48 +137,67 @@ class PGpage(tk.Frame):
         self.controller = controller
         self.password = generate_password()
 
+        title_label = tk.Label(self, text = "Create and Save Password")
+        title_label.grid(row = 0, column = 1, pady = 3)
+
         # function to re generate password
         def regenarate_password():
             self.password = generate_password()
             displaying_password.config(text = self.password)
 
-        # password related widgets
-        password_label = tk.Label(self, text = "Generated Password:  ")
-        password_label.grid(row = 0, column = 0, sticky = 'es')
+        # generated password related widgets
+        generated_password_label = tk.Label(self, text = "Generated Password:  ")
+        generated_password_label.grid(row = 1, column = 0, sticky = 'es', pady = 3)
 
         displaying_password = tk.Label(self, text = self.password)
-        displaying_password.grid(row = 0, column = 1)
+        displaying_password.grid(row = 1, column = 1, pady = 3)
 
         regenarate_button = tk.Button(self, text = "Re-Generate", command = regenarate_password)
-        regenarate_button.grid(row = 0, column = 2, sticky = 'ws')
+        regenarate_button.grid(row = 1, column = 2, sticky = 'ws', pady = 3)
+
+        copy_button = tk.Button(self, text = "Copy", command = self.copy_password)
+        copy_button.grid(row = 1, column = 3, sticky = 'ws', pady = 3)
+
+
+        # password related widgets
+        password_label = tk.Label(self, text = "Enter Password: ")
+        password_label.grid(row = 2, column = 0, pady = 3)
+
+        self.password_field = tk.Entry(self)
+        self.password_field.grid(row = 2, column = 1, pady = 3)
 
 
         # account name related widgets
         account_label = tk.Label(self, text = "Enter Account Name: ")
-        account_label.grid(row = 1, column = 0, sticky = 'es')
+        account_label.grid(row = 3, column = 0, sticky = 'es', pady = 3)
 
         self.account_field = tk.Entry(self)
-        self.account_field.grid(row = 1, column = 1, sticky = 's')
+        self.account_field.grid(row = 3, column = 1, sticky = 's', pady = 3)
 
 
         # save and back buttons
         save_button = tk.Button(self, text = "Save", command = self.send_accName_GenPassword)
-        save_button.grid(row = 3, column = 1, sticky = 'ws')
+        save_button.grid(row = 4, column = 1, sticky = 'ws', pady = 3)
 
         back_button = tk.Button(self, text = "Back", command = self.backToMain)
-        back_button.grid(row = 3, column = 1, sticky = 'es')
+        back_button.grid(row = 4, column = 1, sticky = 'es', pady = 3)
 
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=1)
+        self.grid_columnconfigure(3, weight=1)
 
 
     # function that sends acc_name and generated_password to inserting_password() 
     def send_accName_GenPassword(self):
         account_name = self.account_field.get()
-        generated_password = self.password
+        generated_password = self.password_field.get()
 
+        if not generated_password.strip():
+            tk.messagebox.showwarning("Warning!", "Please enter password.")
+            return
+        
         if not account_name.strip():
             tk.messagebox.showwarning("Warning!", "Please enter account name.")
             return
@@ -180,12 +206,20 @@ class PGpage(tk.Frame):
         sent = inserting_password(account_name, generated_password)
         if sent:
             self.account_field.delete(0, tk.END)
+            self.password_field.delete(0, tk.END)
             self.controller.show_frame(Main)
     
+
+    # function to copy password to clipboard
+    def copy_password(self):
+        pyperclip.copy(self.password)
+        tk.messagebox.showinfo("Copied!", "Generated password copied to clipboard.")
+
 
     # function for back_button
     def backToMain(self):
         self.account_field.delete(0, tk.END)
+        self.password_field.delete(0, tk.END)
         self.controller.show_frame(Main)
 
 
@@ -200,24 +234,35 @@ class ViewP(tk.Frame):
         
         # head title of the page
         title_label = tk.Label(self, text = "Passwords from the database: ")
-        title_label.grid(row=0, columnspan=2)
+        title_label.grid(row=0, columnspan=2, sticky='s')
 
+        # frame to display passwords
         self.canvas = tk.Canvas(self)
-        self.canvas.grid(row=1, columnspan=2)
-
-        # Frame to display passwords
+        self.canvas.grid(row=1, columnspan=3, sticky='n')
         self.passwords_frame = tk.Frame(self.canvas)
         self.canvas.create_window((0, 0), window=self.passwords_frame, anchor="nw")
-
-        # Bind mouse wheel events to scroll the canvas
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
+
+        # 
+        account_label = tk.Label(self, text = "Enter Account to Copy Password: ")
+        account_label.grid(row=2, column=0,)
+
+        self.account_field = tk.Entry(self)
+        self.account_field.grid(row=2, column=1, sticky='ws')
+
+        # Button to copy password
+        copy_button = tk.Button(self, text="Copy", command=self.copy_password)
+        copy_button.grid(row=2, column=2, sticky='ws')
+
+
         # button to go back to the Main page
-        back_button = tk.Button(self, text = "Back", command = lambda:controller.show_frame(Main))
-        back_button.grid(row=2, columnspan=2)
+        back_button = tk.Button(self, text = "Back", command = self.backToMain)
+        back_button.grid(row=3, columnspan=2, sticky='s', pady=5)
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(2, weight=1)
 
         self.scroll_pos = 0
 
@@ -238,6 +283,32 @@ class ViewP(tk.Frame):
     # function to call getting_passwords()
     def getting_passwords(self):
         getting_passwords(self)
+    
+
+    # Function to copy password to clipboard
+    def copy_password(self):
+        # Get account name to copy password
+        account_name = self.account_field.get()
+        if not account_name.strip():
+            tk.messagebox.showwarning("No Account Entered", "Please enter an account name.")
+            return
+
+        # Get password from the database
+        password = get_password_from_database(account_name)
+        if password:
+            pyperclip.copy(password)
+            tk.messagebox.showinfo("Copy Password", "Password copied to clipboard.")
+            self.account_field.delete(0, tk.END)
+        else:
+            tk.messagebox.showwarning("Account Not Found", f"No password found for account '{account_name}'.")
+
+    
+    # function for back_button
+    def backToMain(self):
+        self.account_field.delete(0, tk.END)
+        self.controller.show_frame(Main)
+
+    
 
 
 
@@ -268,7 +339,7 @@ class EditP(tk.Frame):
         password_label = tk.Label(self, text="Password:")
         password_label.grid(row=2, column=0, padx = 1, pady = 3, sticky='es')
 
-        self.password_entry = tk.Entry(self, show="*")
+        self.password_entry = tk.Entry(self)
         self.password_entry.grid(row=2, column=1, padx = 1, pady = 3, sticky='ws')
 
         regenarate_button = tk.Button(self, text = "Re-Generate", command = regenarate_password)
@@ -277,11 +348,11 @@ class EditP(tk.Frame):
         displaying_password = tk.Label(self,  text = self.password)
         displaying_password.grid(row = 2, column = 3, )
 
-        copy_button = tk.Button(self, text = "Copy", command = "smth")  # update command
+        copy_button = tk.Button(self, text = "Copy", command = self.copy_password)  
         copy_button.grid(row = 2, column = 4, padx = 1, pady = 3, )
 
         # update and back buttons
-        update_button = tk.Button(self, text="Update Password", command = self.send_accName_newPassword)     # updating command
+        update_button = tk.Button(self, text="Update Password", command = self.send_accName_newPassword)
         update_button.grid(row=3, column=1, padx = 1, pady = 3)
 
         back_button = tk.Button(self, text="Back", command= self.backToMain)
@@ -298,20 +369,26 @@ class EditP(tk.Frame):
         account_name = self.acc_name_field.get()
         new_password = self.password_entry.get()
         
+        if not account_name.strip():
+            tk.messagebox.showwarning("Warning!", "Please enter account name.")
+            return
+
         if not new_password.strip():
             tk.messagebox.showwarning("Warning!", "Please enter new password.")
             return
         
-        if not account_name.strip():
-            tk.messagebox.showwarning("Warning!", "Please enter account name.")
-            return
-        
+    
         # send information to inserting_password()
         sent = editing_passwords(new_password, account_name)
         if sent:
             self.acc_name_field.delete(0, tk.END)
             self.password_entry.delete(0, tk.END)
             self.controller.show_frame(Main)
+
+    # function to copy password to clipboard
+    def copy_password(self):
+        pyperclip.copy(self.password)
+        tk.messagebox.showinfo("Copied!", "Generated password copied to clipboard.")
 
 
     # function for back_button
@@ -500,28 +577,45 @@ def getting_passwords(ViewP_instance):
 
     except mysql.connector.Error as err:
         # error alert box
-        tk.messagebox.showerror("Error", f"Error: {err}")   
+        tk.messagebox.showerror("Error", f"Error: {err}") 
+
+
+# function to get password to copy
+def get_password_from_database(account_name):
+    try:
+        # Query to retrieve password from the database based on account name
+        cursor.execute("SELECT password FROM GeneratedPasswords WHERE acc_name = %s", (account_name,))
+        password_row = cursor.fetchone()
+        if password_row:
+            return password_row[0]  # Assuming password is in the first column
+        else:
+            return None
+    except mysql.connector.Error as err:
+        tk.messagebox.showerror("Database Error", f"Error accessing database: {err}")
+        return None  
 
 
 # editing passwords in the database
 def editing_passwords(new_password, account_name):
     try:
-        # query to update passsword in the database
-        cursor.execute("update GeneratedPasswords set password = %s where acc_name = %s", (new_password, account_name)) 
+        # Check if the account exists in the database
+        cursor.execute("SELECT * FROM GeneratedPasswords WHERE acc_name = %s", (account_name,))
+        account_row = cursor.fetchone()
+        if not account_row:
+            tk.messagebox.showwarning("Account Not Found", f"No account named '{account_name}' found in the database.")
+            return False
+        
+        # Update the password for the account
+        cursor.execute("UPDATE GeneratedPasswords SET password = %s WHERE acc_name = %s", (new_password, account_name))
         connection.commit()
 
-        tk.messagebox.showinfo("Status:", f"Password for account {account_name} was updated to {new_password}")
+        tk.messagebox.showinfo("Password Updated", f"Password for account '{account_name}' successfully updated.")
         return True
     
     except mysql.connector.Error as err:
-        # error alert box
-        tk.messagebox.showerror("Error", f"Error: {err}")
+        tk.messagebox.showerror("Database Error", f"Error updating password: {err}")
         return False
 
-    finally:
-            if 'connection' in locals() and connection.is_connected():
-                cursor.close()
-                connection.close()
 
 
 # deleting passwords from the database
